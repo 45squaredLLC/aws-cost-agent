@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Cost Optimizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>window.BASE_PATH = "{{ request.script_root }}";</script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>☁️ AWS Cost Optimizer</h1>
+            <p>AI-powered cost analysis with Amazon Bedrock Nova</p>
+        </header>
+
+        <div class="status-bar" id="statusBar">
+            <span id="statusText">Ready to analyze</span>
+            <label class="demo-toggle" title="Hide sensitive account and resource IDs">
+                <input type="checkbox" id="demoModeToggle">
+                <span class="demo-toggle-label">Demo Mode</span>
+            </label>
+        </div>
+
+        <div id="accountSelector" class="account-selector" style="display: none;">
+            <div class="account-selector-header">
+                <h3>Select Accounts</h3>
+                <div class="account-selector-actions">
+                    <button class="btn-small" id="selectAllBtn">Select All</button>
+                    <button class="btn-small" id="selectNoneBtn">Select None</button>
+                </div>
+            </div>
+            <div id="accountList" class="account-list"></div>
+        </div>
+
+        <div class="action-section">
+            <button id="analyzeBtn" class="btn-primary">
+                🔍 Analyze My AWS Account
+            </button>
+        </div>
+
+        <div id="loadingSpinner" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Analyzing your AWS account... This may take a minute.</p>
+        </div>
+
+        <div id="results" class="results" style="display: none;">
+            <!-- Org Summary (only in org mode) -->
+            <section class="card org-summary" id="orgSummarySection" style="display: none;">
+                <h2>🏢 Organization Summary</h2>
+                <div id="orgSummary"></div>
+            </section>
+
+            <!-- Account Tabs (only in org mode) -->
+            <div id="accountTabs" class="account-tabs" style="display: none;"></div>
+
+            <!-- Cost Summary -->
+            <section class="card">
+                <h2>💰 Cost Summary</h2>
+                <div id="costSummary"></div>
+            </section>
+
+            <!-- Resources -->
+            <section class="card">
+                <h2>📦 Resources</h2>
+                <div id="resourceSummary"></div>
+            </section>
+
+            <!-- Orphaned Resources -->
+            <section class="card orphaned-section" id="orphanedSection" style="display: none;">
+                <h2>⚠️ Orphaned Resources</h2>
+                <p class="orphaned-description">These resources are costing money but aren't attached to anything. Consider deleting them for immediate savings.</p>
+                <div id="orphanedSummary"></div>
+            </section>
+
+            <!-- Bedrock Usage (optional — hidden when no Bedrock activity) -->
+            <section class="card bedrock-section" id="bedrockSection" style="display: none;">
+                <h2>🧠 Bedrock Usage Analysis</h2>
+                <p class="bedrock-description">Model usage, token consumption, and caller attribution from CloudWatch metrics and CloudTrail.</p>
+                <div id="bedrockSummary"></div>
+            </section>
+
+            <!-- Recommendations -->
+            <section class="card">
+                <h2>🎯 AI Recommendations</h2>
+                <div id="recommendations"></div>
+            </section>
+
+            <!-- Interactive Chat -->
+            <section class="card chat-section">
+                <h2>💬 Ask Follow-up Questions</h2>
+                <p class="chat-description">Chat with the AI to dive deeper into your AWS resources and get personalized optimization advice.</p>
+                
+                <div id="chatMessages" class="chat-messages"></div>
+                
+                <div class="chat-input-container">
+                    <textarea 
+                        id="chatInput" 
+                        class="chat-input" 
+                        placeholder="Ask about your resources, costs, or optimizations... (Shift+Enter for new line)"
+                        rows="1"
+                        disabled
+                    ></textarea>
+                    <button id="sendBtn" class="btn-send" disabled>Send</button>
+                </div>
+                
+                <div class="chat-suggestions">
+                    <p><strong>Try asking:</strong></p>
+                    <button class="suggestion-btn" data-suggestion="Which EC2 instances are costing me the most?">Which EC2 instances cost the most?</button>
+                    <button class="suggestion-btn" data-suggestion="Show me all idle resources">Show idle resources</button>
+                    <button class="suggestion-btn" data-suggestion="What can I do to reduce my S3 costs?">Reduce S3 costs</button>
+                    <button class="suggestion-btn" data-suggestion="Give me a detailed analysis of my us-east-1 region">Analyze us-east-1</button>
+                </div>
+            </section>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <h3>⚠️ Error</h3>
+            <p id="errorMessage"></p>
+        </div>
+
+        <!-- History Section -->
+        <section class="card history-section" id="historySection" style="display: none;">
+            <h2>📜 Analysis History</h2>
+            <div id="historyList" class="history-list"></div>
+        </section>
+
+        <!-- History Modal -->
+        <div id="historyModal" class="history-modal" style="display: none;">
+            <div class="history-modal-content">
+                <div class="history-modal-header">
+                    <h3 id="historyModalTitle">Analysis Details</h3>
+                    <div class="history-modal-actions">
+                        <a id="historyDownloadLink" class="btn-small" download>Download</a>
+                        <button class="btn-small" id="historyModalClose">Close</button>
+                    </div>
+                </div>
+                <div id="historyModalBody" class="history-modal-body"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by AWS Bedrock Nova | <a href="https://github.com" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

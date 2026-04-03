@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Creates a read-only IAM role for AWS Cost Optimizer cross-account analysis.
+  Deploy as a StackSet from the management account to all member accounts.
+
+Parameters:
+  ManagementAccountId:
+    Type: String
+    Description: The AWS account ID of the management account running the Cost Optimizer
+    AllowedPattern: '[0-9]{12}'
+    ConstraintDescription: Must be a 12-digit AWS account ID
+
+  RoleName:
+    Type: String
+    Default: CostOptimizerReadOnly
+    Description: Name of the IAM role to create
+    AllowedPattern: '[a-zA-Z0-9+=,.@_-]+'
+
+Resources:
+  CostOptimizerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      Description: Read-only role for AWS Cost Optimizer cross-account analysis
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${ManagementAccountId}:root'
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      Policies:
+        - PolicyName: CostOptimizerBedrockReadOnly
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: BedrockReadOnly
+                Effect: Allow
+                Action:
+                  - bedrock:List*
+                  - bedrock:Get*
+                  - bedrock-agent:List*
+                  - bedrock-agent:Get*
+                Resource: '*'
+              - Sid: CallerAttribution
+                Effect: Allow
+                Action:
+                  - cloudtrail:LookupEvents
+                  - iam:ListAttachedRolePolicies
+                  - iam:ListRolePolicies
+                  - iam:GetRolePolicy
+                Resource: '*'
+      Tags:
+        - Key: Purpose
+          Value: CostOptimizer
+        - Key: ManagedBy
+          Value: aws-cost-optimizer
+
+Outputs:
+  RoleArn:
+    Description: ARN of the created role
+    Value: !GetAtt CostOptimizerRole.Arn
+
+  RoleName:
+    Description: Name of the created role
+    Value: !Ref CostOptimizerRole

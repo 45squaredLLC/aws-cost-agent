@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-cost-optimizer
+  namespace: aws-cost-optimizer
+  labels:
+    app: aws-cost-optimizer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-cost-optimizer
+  template:
+    metadata:
+      labels:
+        app: aws-cost-optimizer
+    spec:
+      containers:
+      - name: aws-cost-optimizer
+        # Replace with your registry and image tag:
+        image: your-registry.example.com/aws-cost-optimizer:latest
+        ports:
+        - containerPort: 5000
+          name: http
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: aws-cost-optimizer-secrets
+              key: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-cost-optimizer-secrets
+              key: aws-secret-access-key
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aws-cost-optimizer-secrets
+              key: secret-key
+        - name: AWS_REGION
+          value: "us-east-1"
+        - name: AWS_DEFAULT_REGION
+          value: "us-east-1"
+        - name: AWS_REGIONS
+          value: "all"
+        - name: BEDROCK_MODEL_ID
+          value: "us.amazon.nova-lite-v1:0"
+        - name: CROSS_ACCOUNT_ROLE_NAME
+          value: "CostOptimizerReadOnly"
+        # Uncomment if serving behind an ingress at a sub-path:
+        # - name: APPLICATION_ROOT
+        #   value: "/aws-cost-optimizer"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: app-data
+          mountPath: /app/data
+        - name: flask-sessions
+          mountPath: /app/flask_session
+      volumes:
+      - name: app-data
+        persistentVolumeClaim:
+          claimName: aws-cost-optimizer-data
+      - name: flask-sessions
+        emptyDir: {}

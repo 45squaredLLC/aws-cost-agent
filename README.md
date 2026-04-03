@@ -183,6 +183,15 @@ This section only appears when Bedrock usage exists in the account.
 
 Analysis results are automatically saved as markdown files in `./data/history/`. History persists across container restarts via the Docker volume mount. You can view and download past analyses from the web UI.
 
+## Production Deployment
+
+For a more permanent setup, see the [`examples/`](examples/) directory:
+
+- **[Docker (production)](examples/docker/)** — Docker Compose with health checks, restart policies, resource limits, persistent volumes, and an nginx reverse proxy config
+- **[Kubernetes](examples/kubernetes/)** — Full manifest set (namespace, secret, deployment, service, PVC, ingress) for any k8s cluster (k3s, EKS, GKE, AKS)
+
+Each example directory includes a README with step-by-step instructions.
+
 ## Development
 
 To run without Docker for local development:
@@ -217,6 +226,9 @@ aws-cost-optimizer/
 │   └── cost_tools.py         # Strands tools for AI agent
 ├── cloudformation/           # CloudFormation templates
 │   └── cross-account-role.yaml
+├── examples/                 # Production deployment examples
+│   ├── docker/               # Docker Compose + nginx proxy
+│   └── kubernetes/           # Full k8s manifests
 ├── static/                   # Frontend assets (JS, CSS)
 ├── templates/                # HTML templates
 ├── data/                     # Persistent data (gitignored)

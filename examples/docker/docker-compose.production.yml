@@ -1,0 +1,58 @@
+version: '3.8'
+
+# Production Docker Compose for AWS Cost Optimizer
+#
+# Usage:
+#   1. Copy your .env file into this directory (or set env vars below)
+#   2. docker compose -f docker-compose.production.yml up -d
+#
+# This configuration adds health checks, restart policies, persistent
+# volumes, and resource limits on top of the basic docker-compose.yml.
+
+services:
+  app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    # Or use a pre-built image from your registry:
+    # image: your-registry.example.com/aws-cost-optimizer:latest
+    ports:
+      - "5000:5000"
+    env_file:
+      - ../../.env
+    environment:
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_DEFAULT_REGION=${AWS_REGION:-us-east-1}
+      - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID:-us.amazon.nova-lite-v1:0}
+      - CROSS_ACCOUNT_ROLE_NAME=${CROSS_ACCOUNT_ROLE_NAME:-CostOptimizerReadOnly}
+      # Uncomment to serve behind a reverse proxy at a sub-path:
+      # - APPLICATION_ROOT=/aws-cost-optimizer
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - app-data:/app/data
+      - flask-sessions:/app/flask_session
+    restart: unless-stopped
+
+volumes:
+  app-data:
+    driver: local
+  flask-sessions:
+    driver: local

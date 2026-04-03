@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: aws-cost-optimizer
+  namespace: aws-cost-optimizer
+  labels:
+    app: aws-cost-optimizer
+spec:
+  selector:
+    app: aws-cost-optimizer
+  ports:
+  - port: 5000
+    targetPort: 5000
+    name: http
+  type: ClusterIP

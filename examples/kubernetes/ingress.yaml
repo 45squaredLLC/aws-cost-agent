@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aws-cost-optimizer
+  namespace: aws-cost-optimizer
+  labels:
+    app: aws-cost-optimizer
+  annotations:
+    # Increase timeout for long-running analysis scans (5 minutes)
+    # Nginx Ingress Controller:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    # Traefik (uncomment if using Traefik instead of nginx):
+    # traefik.ingress.kubernetes.io/router.middlewares: aws-cost-optimizer-timeout@kubernetescrd
+spec:
+  # Uncomment if using an IngressClass (required on most clusters):
+  # ingressClassName: nginx
+  rules:
+  # Replace with your actual hostname:
+  - host: aws-cost-optimizer.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: aws-cost-optimizer
+            port:
+              number: 5000
+  # Uncomment for TLS:
+  # tls:
+  # - hosts:
+  #   - aws-cost-optimizer.example.com
+  #   secretName: aws-cost-optimizer-tls

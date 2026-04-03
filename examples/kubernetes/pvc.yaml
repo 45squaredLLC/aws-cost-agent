@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: aws-cost-optimizer-data
+  namespace: aws-cost-optimizer
+  labels:
+    app: aws-cost-optimizer
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # Stores analysis history and scan cache
+      storage: 1Gi
+  # Uncomment and set your storage class if not using the default:
+  # storageClassName: local-path

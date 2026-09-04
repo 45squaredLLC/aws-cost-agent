@@ -335,6 +335,42 @@ def download_history(filename):
     return send_from_directory(history_dir, filename, as_attachment=True)
 
 
+@app.route('/api/costs/month/<period>', methods=['GET'])
+def costs_for_month(period):
+    """Org-wide AWS cost for a single calendar month, as JSON.
+
+    ``period`` is "YYYY-MM". Synchronous and lightweight: it runs one
+    Cost Explorer query for that month (no resource scan, no AI). Meant
+    for consumers that need an authoritative, finalized monthly total
+    (e.g. a "previous month" snapshot taken on the 1st).
+    """
+    try:
+        year_str, month_str = period.split('-')
+        year, month = int(year_str), int(month_str)
+        if not (1 <= month <= 12) or year < 2000:
+            raise ValueError('month out of range')
+    except (ValueError, AttributeError):
+        return jsonify({
+            "success": False,
+            "error": f"Invalid period '{period}'; expected YYYY-MM"
+        }), 400
+
+    cost_data = cost_analyzer.get_cost_for_month(year, month)
+    if cost_data.get('error'):
+        return jsonify({"success": False, "error": cost_data['error'],
+                        "period": cost_data.get('period', period)}), 502
+
+    return jsonify({
+        "success": True,
+        "period": cost_data.get('period', period),
+        "start_date": cost_data.get('start_date', ''),
+        "end_date": cost_data.get('end_date', ''),
+        "org_total_cost": cost_data.get('org_total_cost', 0),
+        "currency": "USD",
+        "account_costs": cost_data.get('account_costs', {}),
+    })
+
+
 @app.route('/api/reset', methods=['POST'])
 def reset():
     """

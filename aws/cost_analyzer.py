@@ -90,8 +90,8 @@ class CostAnalyzer:
 
     def get_org_cost_summary(self, days=30, account_ids=None):
         """
-        Get cost summary across multiple accounts using a single CE call
-        grouped by LINKED_ACCOUNT and SERVICE.
+        Get cost summary across multiple accounts for the last N days
+        (rolling window ending today).
 
         Args:
             days: Number of days to analyze
@@ -102,6 +102,48 @@ class CostAnalyzer:
         """
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=days)
+        return self.get_org_cost_summary_range(start_date, end_date, account_ids)
+
+    def get_cost_for_month(self, year, month, account_ids=None):
+        """
+        Get an org-wide cost summary for a single calendar month.
+
+        Cost Explorer's TimePeriod End is exclusive, so we span
+        [first day of month, first day of next month).
+
+        Args:
+            year: 4-digit year
+            month: 1-12
+            account_ids: Optional list of account IDs to filter
+
+        Returns:
+            dict: same shape as get_org_cost_summary_range, with a
+                  ``period`` field of "YYYY-MM".
+        """
+        start_date = datetime(year, month, 1).date()
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1).date()
+        else:
+            end_date = datetime(year, month + 1, 1).date()
+
+        summary = self.get_org_cost_summary_range(start_date, end_date, account_ids)
+        summary['period'] = f'{year:04d}-{month:02d}'
+        return summary
+
+    def get_org_cost_summary_range(self, start_date, end_date, account_ids=None):
+        """
+        Get cost summary across multiple accounts for an explicit date range
+        using a single CE call grouped by LINKED_ACCOUNT and SERVICE.
+
+        Args:
+            start_date: datetime.date, inclusive
+            end_date: datetime.date, EXCLUSIVE (Cost Explorer convention)
+            account_ids: Optional list of account IDs to filter
+
+        Returns:
+            dict: Cost summary with per-account breakdown
+        """
+        period_days = (end_date - start_date).days
 
         try:
             kwargs = {
@@ -174,7 +216,7 @@ class CostAnalyzer:
 
             return {
                 'org_total_cost': round(org_total, 2),
-                'period_days': days,
+                'period_days': period_days,
                 'start_date': start_date.strftime('%Y-%m-%d'),
                 'end_date': end_date.strftime('%Y-%m-%d'),
                 'account_costs': formatted
@@ -185,6 +227,8 @@ class CostAnalyzer:
             return {
                 'error': str(e),
                 'org_total_cost': 0,
-                'period_days': days,
+                'period_days': period_days,
+                'start_date': start_date.strftime('%Y-%m-%d'),
+                'end_date': end_date.strftime('%Y-%m-%d'),
                 'account_costs': {}
             }
